@@ -1,276 +1,207 @@
-const GRID_SIZE = 10
-// const background = "#A6CAD2"
-const PALETTE = {
-    frog: "#517171",
-    predator1: "black",
-    predator2: "gray",
-    wall: "#273881",
-    background: "383821"
-}
-const KEYS = { UP: 38, LEFT: 37, RIGHT: 39, SPACE: 32 };
-const TICKS_PER_MOVE = 10
 const PREDATOR_COUNT = 8
-
-
-
-// console.log("Hi")
-
-
-function startGame() {
-    let game = new Game(gameCanvas)
-    game.start()
+const PALETTE = {
+  frog: '#517171',
+  predator: 'black',
+  background: '#383821'
 }
 
+function startGame () {
+  let game = new Game('gameCanvas')
+  game.start()
+}
 
 class Game {
-    constructor(canvasId) {
+  constructor (canvasId) {
+    this.canvas = document.getElementById(canvasId)
+    this.screen = this.canvas.getContext('2d')
+    this.size = {
+      width: this.canvas.width,
+      height: this.canvas.height
+    }
 
-        this.gameOver = false
-        this.canvas = document.getElementById('gameCanvas')
-        this.screen = this.canvas.getContext('2d')
-        this.size = {
-            width: this.canvas.width,
-            height: this.canvas.height
-        }
-        this.squares = { x: this.size.width / GRID_SIZE, y: this.size.height / GRID_SIZE }
+    this.gameOver = false
 
-        
-        this.ticks = 0
+    this.frog = new Frog(this, {
+      x: Math.floor(this.size.width / 2),
+      y: Math.floor(this.size.height / 2)
+    })
 
-        this.gameOver = false
-        
-        this.snake = new Frog(this, {
-            x: Math.floor(this.squares.x / 2),
-            y: Math.floor(this.squares.y / 2)})
-        this.predators = []
+    this.predators = []
 
-
-        let tick = () => {
-          this.ticks++
-          this.update()
-          this.draw()
-          if (!this.gameOver) {
-            window.requestAnimationFrame(tick)
-          }
-        }
-    
-        this.tick = tick
+    let tick = () => {
+      this.update()
+      this.draw()
+      if (!this.gameOver) {
+        window.requestAnimationFrame(tick)
       }
+    }
 
+    this.tick = tick
+  }
 
+  bodies () {
+    return this.predators.concat(this.frog)
+  }
 
-      update () {
-        // while (this.predators.length < PREDATOR_COUNT) {
-        //   this.sendPredator()
-        // }
-    
-        this.frog.update(this.ticks)
-    
-        this.checkGameOver()
-      }
+  update () {
+    while (this.predators.length < PREDATOR_COUNT) {
+      this.sendPredator()
+    }
 
+    this.predators = this.predators.filter((body) => {
+      return !(body.center.x < -20 ||
+               body.center.x > this.size.width + 20 ||
+               body.center.y < 0 ||
+               body.center.y > this.size.height + 20)
+    })
 
+    this.bodies().forEach(function (body) {
+      body.update()
+    })
+  }
 
-      draw () {
-        this.screen.clearRect(0, 0, this.size.width, this.size.height)
-    
-        this.drawWall()
-        
-        for (let predator of this.predators) {
-          predator.draw(this.screen)
-        }
-        this.frog.draw(this.screen)
-        if (this.gameOver) {
-          this.drawGameOver()
-        }
-      }
+  draw () {
+    this.screen.clearRect(0, 0, this.size.width, this.size.height)
+
+    this.bodies().forEach((body) => {
+      body.draw(this.screen)
+    })
+  }
 
   start () {
     this.tick()
   }
 
+  sendPredator () {
+    let sides = ['top', 'left', 'right', 'bottom']
+    let entrySide = sides[Math.floor(Math.random() * sides.length)]
+    let x, y, vx, vy
 
-    //   this.tick = tick
+    if (entrySide === 'top') {
+      x = Math.random() * this.size.width
+      y = -10
+      vx = Math.random() * 4 - 2
+      vy = Math.random() * 2
+    } else if (entrySide === 'left') {
+      x = -10
+      y = Math.random() * this.size.height
+      vx = Math.random() * 2
+      vy = Math.random() * 4 - 2
+    } else if (entrySide === 'bottom') {
+      x = Math.random() * this.size.width
+      y = this.size.height + 10
+      vx = Math.random() * 4 - 2
+      vy = Math.random() * -2
+    } else if (entrySide === 'right') {
+      x = this.size.width + 10
+      y = Math.random() * this.size.height
+      vx = Math.random() * -2
+      vy = Math.random() * 4 - 2
+    }
 
-
-
-    // checkGameOver () {
-    //     if (doesIntersectWithArray(this.frog(), this.predators())) {
-    //       this.gameOver = true
-    //     }
-    //   }
-    
-
-  frogBumpsWall () {
-    let frog = this.frog()
-    return (
-      frog.x === 0 ||
-      frog.y === 0 ||
-      frog.x === this.squares.x - 1 ||
-      frog.y === this.squares.y - 1
-    )
+    this.predators.push(new Predator(this, {x: x, y: y}, {x: vx, y: vy}))
   }
-
-  drawWall () {
-    this.screen.fillStyle = PALETTE.wall
-    this.screen.fillRect(0, 0, this.size.width, this.size.height)
-
-    this.screen.fillStyle = PALETTE.background
-    this.screen.fillRect(
-      GRID_SIZE,
-      GRID_SIZE,
-      (this.squares.x - 2) * GRID_SIZE,
-      (this.squares.y - 2) * GRID_SIZE)
-  }
-
-
-drawGrid () {
-
-
-
-
-}
-
-
-
 }
 
 class Frog {
-    constructor(game, position) {
-        this.game = game
-        this.keyboarder = new Keyboarder()
-        
+  constructor (game, center) {
+    this.game = game
+    this.center = center
+    this.keyboard = new Keyboarder()
+    this.size = { width: 50, height: 50 }
+  }
 
-    this.keyboarder() {
-        this.keyboarder = new Keyboarder()
-        this.keyboarder.isDown(Keyboarder.KEYS.LEFT, () => this.move('left'))
-        this.keyboarder.isDown(Keyboarder.KEYS.RIGHT, () => this.move('right'))
-        this.keyboarder.isDown(Keyboarder.KEYS.UP, () => this.move('up'))
-        this.keyboarder.isDown(Keyboarder.KEYS.DOWN, () => this.move('down'))
+  update () {
+    if (this.keyboard.isDown(Keyboarder.KEYS.LEFT)) {
+      this.center.x -= 5
+      if (this.center.x <= 0) { this.center.x = this.game.size.width }
     }
+    if (this.keyboard.isDown(Keyboarder.KEYS.RIGHT)) {
+      this.center.x += 5
+      if (this.center.x > this.game.size.width) { this.center.x = 0 }
     }
-
-    update() {
-        this.keyboarder = new Keyboarder()
-            if (this.keyboard.isDown(Keyboarder.KEYS.LEFT)) {
-                this.center.x -= 5
-                if (this.center.x <= 0) this.center.x = 550
-            }
-            if (this.keyboard.isDown(Keyboarder.KEYS.RIGHT)) {
-                this.center.x += 5
-                if (this.center.x > canvas.width) this.center.x = 0
-            }
-            if (this.keyboard.isDown(Keyboarder.KEYS.UP)) {
-                this.center.y -= 3
-                if (this.center.y <= 0) this.center.y = 530
-            }
-            if (this.keyboard.isDown(Keyboarder.KEYS.DOWN)) {
-                this.center.y += 3
-                if (this.center.y >= 530) this.center.y = 530
-            }
-        }
-    
-    draw() {
-
-        let context = this.game.context
-
-        // context.fillStyle = '#57737A'
-        // context.fillRect(225, 225, 50, 50)
-
-        context.beginPath();
-        context.arc(240, 160, 30, 0, Math.PI * 2, false);
-        context.fillStyle = PALETTE.frog
-        context.fill();
-        context.closePath();
-
-        this.frog.draw()
+    if (this.keyboard.isDown(Keyboarder.KEYS.UP)) {
+      this.center.y -= 3
+      if (this.center.y <= 0) { this.center.y = this.game.size.height }
     }
-}    
+    if (this.keyboard.isDown(Keyboarder.KEYS.DOWN)) {
+      this.center.y += 3
+      if (this.center.y >= this.game.size.height) { this.center.y = 0 }
+    }
+  }
 
-
-
-// class Predator {
-//     constructor (game, position) {
-//     this.game = game
-//     // this.size = { width: this.canvas.width, height: this.canvas.height }
-
-//     }
-
-//     update () {
-
-//     }
-
-
-//     draw () {
-
-//     let context = this.game.context
-
-//     context.fillStyle = '#57737A'
-//     context.fillRect(225, 225, 50, 50)
-//     }
-
-//     }
-
-drawGameOver () {
-    this.screen.textAlign = 'center'
-    this.screen.font = '48px Helvetica'
-    this.screen.fillStyle = PALETTE.wall
-    this.screen.fillText('game over', this.size.width / 2, this.size.height / 2)
+  draw (screen) {
+    screen.fillStyle = PALETTE.frog
+    screen.fillRect(
+      this.center.x - this.size.width / 2,
+      this.center.y - this.size.height / 2,
+      this.size.width,
+      this.size.height)
+  }
 }
 
+// Previous (working) frog/player was round:
+// screen.beginPath()
+// screen.arc(this.center.x, this.center.y, 30, 0, Math.PI * 2, false)
+// screen.fillStyle = PALETTE.frog
+// screen.fill()
+// screen.closePath()
 
-sendPredator () {
-    let foundValidPos = false
-    let pos
-    while (!foundValidPos) {
-      pos = {
-        x: Math.floor(Math.random() * (this.squares.x - 2)) + 1,
-        y: Math.floor(Math.random() * (this.squares.y - 2)) + 1
-      }
+class Predator {
+  constructor (game, center, velocity) {
+    this.game = game
+    this.center = center
+    this.velocity = velocity
+    this.size = { width: 50, height: 50 }
+  }
 
-foundValidPos = !(doesIntersectWithArray(pos, this.frog) ||
-doesIntersectWithArray(pos, this.pellets))
+  update () {
+    this.center.x += this.velocity.x
+    this.center.y += this.velocity.y
+  }
+
+  draw (screen) {
+    screen.fillStyle = PALETTE.predator
+    screen.fillRect(
+      this.center.x - this.size.width / 2,
+      this.center.y - this.size.height / 2,
+      this.size.width,
+      this.size.height)
+  }
 }
-
-this.predators.push(new predators(pos))
-}
-
 
 class Keyboarder {
-    constructor() {
-        this.keyState = {}
+  constructor () {
+    this.keyState = {}
 
-        window.addEventListener('keydown', function (e) {
-            this.keyState[e.keyCode] = true
-        }.bind(this))
+    window.addEventListener('keydown', function (e) {
+      this.keyState[e.keyCode] = true
+    }.bind(this))
 
-        window.addEventListener('keyup', function (e) {
-            this.keyState[e.keyCode] = false
-        }.bind(this))
-    }
+    window.addEventListener('keyup', function (e) {
+      this.keyState[e.keyCode] = false
+    }.bind(this))
+  }
 
-    isDown(keyCode) {
-        return this.keyState[keyCode] === true
-    }
+  isDown (keyCode) {
+    return this.keyState[keyCode] === true
+  }
 
-    on(keyCode, callback) {
-        window.addEventListener('keydown', function (e) {
-            if (e.keyCode === keyCode) {
-                callback()
-            }
-        })
-    }
+  on (keyCode, callback) {
+    window.addEventListener('keydown', function (e) {
+      if (e.keyCode === keyCode) {
+        callback()
+      }
+    })
+  }
 }
 
 Keyboarder.KEYS = {
-    LEFT: 37,
-    RIGHT: 39,
-    UP: 38,
-    DOWN: 40,
-    S: 83
+  LEFT: 37,
+  RIGHT: 39,
+  UP: 38,
+  DOWN: 40,
+  S: 83
 }
-
-
-
 
 startGame()
