@@ -60,9 +60,9 @@ class Game {
 
 
       update () {
-        while (this.predators.length < PREDATOR_COUNT) {
-          this.sendPredator()
-        }
+        // while (this.predators.length < PREDATOR_COUNT) {
+        //   this.sendPredator()
+        // }
     
         this.frog.update(this.ticks)
     
@@ -94,11 +94,11 @@ class Game {
 
 
 
-    checkGameOver () {
-        if (doesIntersectWithArray(this.frog(), this.predators())) {
-          this.gameOver = true
-        }
-      }
+    // checkGameOver () {
+    //     if (doesIntersectWithArray(this.frog(), this.predators())) {
+    //       this.gameOver = true
+    //     }
+    //   }
     
 
   frogBumpsWall () {
@@ -141,13 +141,13 @@ class Frog {
         this.keyboarder = new Keyboarder()
         
 
-    // this.keyboarder() {
-    //     this.keyboarder = new Keyboarder()
-    //     this.keyboarder.isDown(Keyboarder.KEYS.LEFT, () => this.move('left'))
-    //     this.keyboarder.isDown(Keyboarder.KEYS.RIGHT, () => this.move('right'))
-    //     this.keyboarder.isDown(Keyboarder.KEYS.UP, () => this.move('up'))
-    //     this.keyboarder.isDown(Keyboarder.KEYS.DOWN, () => this.move('down'))
-    // }
+    this.keyboarder() {
+        this.keyboarder = new Keyboarder()
+        this.keyboarder.isDown(Keyboarder.KEYS.LEFT, () => this.move('left'))
+        this.keyboarder.isDown(Keyboarder.KEYS.RIGHT, () => this.move('right'))
+        this.keyboarder.isDown(Keyboarder.KEYS.UP, () => this.move('up'))
+        this.keyboarder.isDown(Keyboarder.KEYS.DOWN, () => this.move('down'))
+    }
     }
 
     update() {
