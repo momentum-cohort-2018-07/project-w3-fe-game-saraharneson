@@ -1,0 +1,31 @@
+html {
+    max-width: 800px;
+    height: 800px;
+}
+
+body {
+    width: 500px;
+    height: 500px;
+    background-color: #bebebe;
+    margin: 20px auto;
+    padding: 20px;
+}
+
+/* .game {
+
+    /* margin: 0 auto; */
+    /* background-color: #e3f7f6; */
+/* } */ 
+
+canvas {
+    width: 500px;
+    height: 500px;
+    border: 5px solid #000000;
+    background-color: #e3f7f6;
+    margin: 0 auto;
+    }
+
+#gameName {
+    font-family: 'Abril Fatface', cursive;
+    font-size: 2.25rem;
+}
